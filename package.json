@@ -1,0 +1,37 @@
+{
+  "name": "grpc-web-service-generator",
+  "version": "0.1.0",
+  "description": "gRPC-Web Service Generator",
+  "author": "quarrant",
+  "license": "MIT",
+  "keywords": [
+    "grpc",
+    "grpc-web"
+  ],
+  "homepage": "https://github.com/quarrant/grpc-web-service-generator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quarrant/grpc-web-service-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/quarrant/grpc-web-service-generator/issues"
+  },
+  "bin": {
+    "grpc-web-service-generator": "lib/cli.js"
+  },
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "prepublishOnly": "yarn build"
+  },
+  "peerDependencies": {
+    "protobufjs": "^6.9.0",
+    "semver": "^7.1.2",
+    "chalk": "^4.0.0",
+    "jsdoc": "^3.6.3",
+    "tmp": "^0.1.0",
+    "estraverse": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.7.3"
+  }
+}
