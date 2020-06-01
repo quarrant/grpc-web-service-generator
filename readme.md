@@ -46,5 +46,4 @@ import { GrpcService } from './GrpcService';
 const service = new GrpcService('http://localhost:8080');
 
 service.TodoService.AddTodo({}).then(response => ...)
-
 ```
