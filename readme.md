@@ -43,7 +43,24 @@ service TodoService {
 ```typescript
 import { GrpcService } from './GrpcService';
 
-const service = new GrpcService('http://localhost:8080');
+const grpcService = new GrpcService('http://localhost:8080');
 
-service.TodoService.AddTodo({}).then(response => ...)
+grpcService.TodoService.AddTodo({}).then(response => ...)
+```
+## Interceptors
+
+```typescript
+const updateGrpcServiceAccessToken = async () => {
+  storedAccessToken = await grpcService.AuthService.GetAccessToken();
+  console.log("updateGrpcServiceAccessToken", storedAccessToken);
+  grpcService.setAccessToken(storedAccessToken);
+};
+
+grpcService.interceptors.errors.push(e => {
+  if (e === "INVALID_TOKEN") {
+    return updateGrpcServiceAccessToken();
+  } else {
+    return Promise.resolve();
+  }
+});
 ```

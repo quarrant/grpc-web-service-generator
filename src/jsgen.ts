@@ -23,9 +23,29 @@ export class GrpcService {
   private client: GrpcWebClientBase;
   private metadata: Metadata = {};
   private hostname: string;
+  private interceptingPromise?: Promise<any>;
+  public interceptors: { errors: ((e: any) => Promise<any>)[] } = {
+    errors: []
+  };
   constructor(hostname: string) {
     this.client = new GrpcWebClientBase({});
     this.hostname = hostname;
+  }
+  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo): Promise<Result> => {
+    if (this.interceptingPromise) {
+      return this.interceptingPromise.then(() => this.client.unaryCall(command, params, this.metadata, methodInfo));
+    }
+    return this.client.unaryCall<Params, Result>(command, params, this.metadata, methodInfo).catch(e => {
+      this.chainingInterceptors(this.interceptors.errors, e)
+      throw e
+    });
+  }
+  private chainingInterceptors = (interceptors: ((e: any) => Promise<any>)[], value: any) => {
+    this.interceptingPromise = interceptors.reduce(
+      (chain, nextInterceptor) => chain.then(nextInterceptor),
+      Promise.resolve(value)
+    );
+    return this.interceptingPromise;
   }
   public setMetadata = (metadata: Metadata = {}) => {
     this.metadata = Object.assign({}, this.metadata, metadata);
@@ -71,7 +91,7 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
     `    (request: ${packageName}.${method.requestType}) => ${packageName}.${method.requestType}.encode(request).finish(),`,
     `    ${packageName}.${method.responseType}.decode`,
     '  );',
-    `  return this.client.unaryCall(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, this.metadata, methodInfo);`,
+    `  return this.makeInterceptedUnaryCall(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, methodInfo);`,
     '},',
   ].join(`\n${getIndentSpaces(2)}`);
 }
