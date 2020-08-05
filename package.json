@@ -1,6 +1,6 @@
 {
   "name": "grpc-web-service-generator",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "gRPC-Web Service Generator",
   "author": "quarrant",
   "license": "MIT",
