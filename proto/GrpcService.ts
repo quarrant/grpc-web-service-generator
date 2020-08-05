@@ -3,6 +3,10 @@
 import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream } from 'grpc-web';
 import { Test } from './codegen/test_pb';
 
+type Options = {
+  ignoreInterceptors?: boolean
+}
+
 export class GrpcService {
   private client: GrpcWebClientBase;
   private metadata: Metadata = {};
@@ -15,8 +19,12 @@ export class GrpcService {
     this.client = new GrpcWebClientBase({});
     this.hostname = hostname;
   }
-  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo): Promise<Result> => {
+  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo, options: Options = {}): Promise<Result> => {
     const unaryCallHandler = (): Promise<Result> => this.client.unaryCall(command, params, this.metadata, methodInfo)
+    
+    if (options.ignoreInterceptors) {
+      return unaryCallHandler()
+    }
     
     if (this.interceptingPromise) {
       return this.interceptingPromise.then(() => {
@@ -44,21 +52,21 @@ export class GrpcService {
     this.metadata = Object.assign({}, this.metadata, metadata);
   };
   public TestService = {
-    RefreshToken: (params: Test.IEmptyMessage): Promise<Test.EmptyMessage> => {
+    RefreshToken: (params: Test.IEmptyMessage, options: Options = {}): Promise<Test.EmptyMessage> => {
       const methodInfo = new AbstractClientBase.MethodInfo(
         Test.EmptyMessage,
         (request: Test.EmptyMessage) => Test.EmptyMessage.encode(request).finish(),
         Test.EmptyMessage.decode
       );
-      return this.makeInterceptedUnaryCall(this.hostname + '/Test.TestService/RefreshToken', params, methodInfo);
+      return this.makeInterceptedUnaryCall(this.hostname + '/Test.TestService/RefreshToken', params, methodInfo, options);
     },
-    GetOrder: (params: Test.IEmptyMessage): Promise<Test.EmptyMessage> => {
+    GetOrder: (params: Test.IEmptyMessage, options: Options = {}): Promise<Test.EmptyMessage> => {
       const methodInfo = new AbstractClientBase.MethodInfo(
         Test.EmptyMessage,
         (request: Test.EmptyMessage) => Test.EmptyMessage.encode(request).finish(),
         Test.EmptyMessage.decode
       );
-      return this.makeInterceptedUnaryCall(this.hostname + '/Test.TestService/GetOrder', params, methodInfo);
+      return this.makeInterceptedUnaryCall(this.hostname + '/Test.TestService/GetOrder', params, methodInfo, options);
     },
   };
 };

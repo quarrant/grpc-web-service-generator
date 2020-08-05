@@ -19,6 +19,10 @@ export function createGrpcServiceSource(packageDefinition: PackageDefinition, st
 import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream } from 'grpc-web';
 import { ${firstPackage.name} } from '${staticObjectsRelativeFilename}';
 
+type Options = {
+  ignoreInterceptors?: boolean
+}
+
 export class GrpcService {
   private client: GrpcWebClientBase;
   private metadata: Metadata = {};
@@ -31,8 +35,12 @@ export class GrpcService {
     this.client = new GrpcWebClientBase({});
     this.hostname = hostname;
   }
-  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo): Promise<Result> => {
+  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo, options: Options = {}): Promise<Result> => {
     const unaryCallHandler = (): Promise<Result> => this.client.unaryCall(command, params, this.metadata, methodInfo)
+    
+    if (options.ignoreInterceptors) {
+      return unaryCallHandler()
+    }
     
     if (this.interceptingPromise) {
       return this.interceptingPromise.then(() => {
@@ -94,13 +102,13 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
   }
 
   return [
-    `${method.name}: (params: ${packageName}.I${method.requestType}): Promise<${packageName}.${method.responseType}> => {`,
+    `${method.name}: (params: ${packageName}.I${method.requestType}, options: Options = {}): Promise<${packageName}.${method.responseType}> => {`,
     '  const methodInfo = new AbstractClientBase.MethodInfo(',
     `    ${packageName}.${method.responseType},`,
     `    (request: ${packageName}.${method.requestType}) => ${packageName}.${method.requestType}.encode(request).finish(),`,
     `    ${packageName}.${method.responseType}.decode`,
     '  );',
-    `  return this.makeInterceptedUnaryCall(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, methodInfo);`,
+    `  return this.makeInterceptedUnaryCall(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, methodInfo, options);`,
     '},',
   ].join(`\n${getIndentSpaces(2)}`);
 }
