@@ -50,10 +50,10 @@ export class GrpcService {
     }
     
     return new Promise((resolve, reject) => {
-      unaryCallHandler().catch(e => {
+      unaryCallHandler().then(resolve).catch(e => {
         this.chainingInterceptors(this.interceptors.errors, e).then(() => {
           this.makeInterceptedUnaryCall<Result, Params, MethodInfo>(command, params, methodInfo).then(resolve).catch(reject)
-        })
+        }).catch(reject)
       });
     });
   }
