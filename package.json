@@ -21,7 +21,10 @@
   },
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "generate": "ts-node ./src/cli.ts --proto-file=./proto/test.proto --output-dir=./proto",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "peerDependencies": {
     "chalk": "^4.0.0",
@@ -39,6 +42,21 @@
     "protobufjs": "^6.10.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.7.3",
-    "uglify-js": "^3.10.1"
+    "uglify-js": "^3.10.1",
+    "jest": "^26.2.2",
+    "ts-jest": "^26.1.4"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": ".",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "coverageDirectory": "../coverage"
   }
 }

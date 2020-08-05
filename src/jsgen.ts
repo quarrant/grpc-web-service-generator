@@ -32,12 +32,21 @@ export class GrpcService {
     this.hostname = hostname;
   }
   private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo): Promise<Result> => {
+    const unaryCallHandler = (): Promise<Result> => this.client.unaryCall(command, params, this.metadata, methodInfo)
+    
     if (this.interceptingPromise) {
-      return this.interceptingPromise.then(() => this.client.unaryCall(command, params, this.metadata, methodInfo));
+      return this.interceptingPromise.then(() => {
+        this.interceptingPromise = undefined;
+        return unaryCallHandler()
+      });
     }
-    return this.client.unaryCall<Params, Result>(command, params, this.metadata, methodInfo).catch(e => {
-      this.chainingInterceptors(this.interceptors.errors, e)
-      throw e
+    
+    return new Promise((resolve, reject) => {
+      unaryCallHandler().catch(e => {
+        this.chainingInterceptors(this.interceptors.errors, e).then(() => {
+          this.makeInterceptedUnaryCall<Result, Params, MethodInfo>(command, params, methodInfo).then(resolve).catch(reject)
+        })
+      });
     });
   }
   private chainingInterceptors = (interceptors: ((e: any) => Promise<any>)[], value: any) => {
