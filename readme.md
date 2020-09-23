@@ -57,7 +57,7 @@ import { GrpcService } from './GrpcService';
 
 const grpcService = new GrpcService('http://localhost:8080');
 
-grpcService.Test.TodoService.AddTodo({}).then(response => ...)
+grpcService.RpcPackage.TodoService.AddTodo({}).then(response => ...)
 ```
 
 ## Interceptors
