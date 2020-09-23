@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package Test;
 
+import "test2.proto";
+
 service TestService {
   rpc RefreshToken(EmptyMessage) returns (EmptyMessage) {}
   rpc GetOrder(EmptyMessage) returns (EmptyMessage) {}

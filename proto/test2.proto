@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package Test2_Nested;
+
+service TestService2 {
+  rpc GetOrder(EmptyMessage) returns (EmptyMessage) {}
+}
+
+message EmptyMessage {}

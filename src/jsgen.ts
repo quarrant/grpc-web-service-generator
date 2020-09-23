@@ -1,4 +1,4 @@
-import { PackageDefinition, PackageService, ServiceMethod } from './protobuf';
+import { PackageDefinition, Package, PackageService, ServiceMethod } from './protobuf';
 
 export function getIndentSpaces(level: number = 0) {
   return new Array(2 * level).fill(' ').join('');
@@ -14,10 +14,12 @@ export function createSource(statements: string[]) {
 
 export function createGrpcServiceSource(packageDefinition: PackageDefinition, staticObjectsRelativeFilename: string) {
   const [firstPackage] = packageDefinition.packages;
+  const packagesNamesArray = packageDefinition.packages.map((_) => _.name);
+
   return `
 /* eslint-disable */
 import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream } from 'grpc-web';
-import { ${firstPackage.name} } from '${staticObjectsRelativeFilename}';
+import { ${packagesNamesArray.join(', ')} } from '${staticObjectsRelativeFilename}';
 
 type Options = {
   ignoreInterceptors?: boolean
@@ -67,20 +69,29 @@ export class GrpcService {
   public setMetadata = (metadata: Metadata = {}) => {
     this.metadata = Object.assign({}, this.metadata, metadata);
   };
-  ${firstPackage.services
-    .map((service) => createServiceSource(service, firstPackage.name))
-    .join(`\n${getIndentSpaces(1)}`)}
+
+  ${packageDefinition.packages.map(createPackageItemSource).join(`\n${getIndentSpaces(1)}`)}
 };`;
+}
+
+function createPackageItemSource(packageItem: Package) {
+  return [
+    `public ${packageItem.name} = {`,
+    packageItem.services
+      .map((service) => createServiceSource(service, packageItem.name))
+      .join(`\n${getIndentSpaces(3)}`),
+    '};',
+  ].join(`\n${getIndentSpaces(1)}`);
 }
 
 export function createServiceSource(service: PackageService, packageName: string) {
   return [
-    `public ${service.name} = {`,
+    `  ${service.name}: {`,
     `  ${service.methods
       .map((method) => createServiceMethodSource(method, service.name, packageName))
-      .join(`\n${getIndentSpaces(2)}`)}`,
-    '};',
-  ].join(`\n${getIndentSpaces(1)}`);
+      .join(`\n${getIndentSpaces(3)}`)}`,
+    '},',
+  ].join(`\n${getIndentSpaces(2)}`);
 }
 
 function createServerStreamingFunction(packageName: string, serviceName: string, methodName: string) {
@@ -98,7 +109,7 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
       '  );',
       `  ${createServerStreamingFunction(packageName, serviceName, method.name)}`,
       '},',
-    ].join(`\n${getIndentSpaces(2)}`);
+    ].join(`\n${getIndentSpaces(3)}`);
   }
 
   return [
@@ -110,5 +121,5 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
     '  );',
     `  return this.makeInterceptedUnaryCall(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, methodInfo, options);`,
     '},',
-  ].join(`\n${getIndentSpaces(2)}`);
+  ].join(`\n${getIndentSpaces(3)}`);
 }
