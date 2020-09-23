@@ -40,6 +40,8 @@ service TodoService {
 }
 ```
 
+## Version <= 0.1.6
+
 ```typescript
 import { GrpcService } from './GrpcService';
 
@@ -47,17 +49,28 @@ const grpcService = new GrpcService('http://localhost:8080');
 
 grpcService.TodoService.AddTodo({}).then(response => ...)
 ```
+
+## Version >= 0.1.7 (Support for multiple packages)
+
+```typescript
+import { GrpcService } from './GrpcService';
+
+const grpcService = new GrpcService('http://localhost:8080');
+
+grpcService.Test.TodoService.AddTodo({}).then(response => ...)
+```
+
 ## Interceptors
 
 ```typescript
 const updateGrpcServiceAccessToken = async () => {
   storedAccessToken = await grpcService.AuthService.GetAccessToken();
-  console.log("updateGrpcServiceAccessToken", storedAccessToken);
+  console.log('updateGrpcServiceAccessToken', storedAccessToken);
   grpcService.setAccessToken(storedAccessToken);
 };
 
-grpcService.interceptors.errors.push(e => {
-  if (e === "INVALID_TOKEN") {
+grpcService.interceptors.errors.push((e) => {
+  if (e === 'INVALID_TOKEN') {
     return updateGrpcServiceAccessToken();
   } else {
     return Promise.resolve();
