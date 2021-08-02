@@ -92,7 +92,10 @@ export function generateStaticObjects(protoFiles: string[]): Promise<string> {
         ...protoFiles,
       ],
       (error, output) => {
-        if (error) reject(error);
+        if (error || !output) {
+          reject(error || new Error('Empty output'));
+          return;
+        }
         resolve(output);
       },
     );
@@ -102,7 +105,10 @@ export function generateStaticObjects(protoFiles: string[]): Promise<string> {
 export function generateStaticDeclarations(staticObjectsFile: string): Promise<string> {
   return new Promise((resolve, reject) => {
     protobufjsCli.pbts.main([staticObjectsFile], (error, output) => {
-      if (error) reject(error);
+      if (error || !output) {
+        reject(error || new Error('Empty output'));
+        return;
+      }
       resolve(output);
     });
   });
