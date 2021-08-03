@@ -12,6 +12,6 @@
     "strict": true,
     "jsx": "react"
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/*.test.ts", "node_modules", "proto"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["**/*.test.ts"]
 }
