@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as path from 'path';
-import * as fs from 'fs';
+import { promises as fs} from 'fs';
 
 import * as protobuf from './protobuf';
 import * as jsgen from './jsgen';
@@ -48,9 +48,7 @@ async function cli() {
      * GrpcService.
      */
     const codegenDirectory = path.resolve(argv['output-dir'], codegenToken);
-    if (!fs.existsSync(codegenDirectory)) {
-      fs.mkdirSync(codegenDirectory, { recursive: true });
-    }
+    await fs.mkdir(codegenDirectory, { recursive: true });
 
     /**
      * Генерация пакетов, сервисов и их объектов с proto-файла,
@@ -59,7 +57,7 @@ async function cli() {
      */
     const staticObjectsSource = await protobuf.generateStaticObjects(packageDefinition.files);
     const staticObjectsFilename = path.resolve(codegenDirectory, `${rootProtoShortname}_pb.js`);
-    fs.writeFileSync(staticObjectsFilename, staticObjectsSource);
+    await fs.writeFile(staticObjectsFilename, staticObjectsSource);
 
     /**
      * Генерация описания типов для уже сгенерированных пакетов,
@@ -67,7 +65,7 @@ async function cli() {
      */
     const staticDeclarationsSource = await protobuf.generateStaticDeclarations(staticObjectsFilename);
     const staticDeclarationsFilename = path.resolve(codegenDirectory, `${rootProtoShortname}_pb.d.ts`);
-    fs.writeFileSync(staticDeclarationsFilename, staticDeclarationsSource);
+    await fs.writeFile(staticDeclarationsFilename, staticDeclarationsSource);
 
     /**
      * Генерация клиентсткого GrpcService. Является оберткой
@@ -80,7 +78,7 @@ async function cli() {
       const grpcServiceSource = jsgen.createGrpcServiceSource(packageDefinition, staticObjectsRelativeFilename);
 
       const grpcServiceFilename = path.resolve(argv['output-dir'], 'GrpcService.ts');
-      fs.writeFileSync(grpcServiceFilename, grpcServiceSource);
+      await fs.writeFile(grpcServiceFilename, grpcServiceSource);
     }
   } catch (error) {
     console.error('grpcw-service-generator [error]:', error);

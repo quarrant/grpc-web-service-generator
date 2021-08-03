@@ -26,6 +26,9 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
+  "engines": {
+    "node": ">=10.1.0"
+  },
   "dependencies": {
     "protobufjs": "^6.11.2",
     "yargs": "^17.0.1"
