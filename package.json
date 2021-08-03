@@ -27,11 +27,13 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "protobufjs": "^6.11.2"
+    "protobufjs": "^6.11.2",
+    "yargs": "^17.0.1"
   },
   "devDependencies": {
     "@types/jest": "^26.0.8",
     "@types/node": "^16.4.10",
+    "@types/yargs": "^17.0.2",
     "grpc-web": "^1.2.1",
     "jest": "^27.0.6",
     "ts-jest": "^27.0.4",
