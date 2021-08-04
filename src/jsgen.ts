@@ -13,7 +13,6 @@ export function createSource(statements: string[]) {
 }
 
 export function createGrpcServiceSource(packageDefinition: PackageDefinition, staticObjectsRelativeFilename: string) {
-  const [firstPackage] = packageDefinition.packages;
   const packagesNamesArray = packageDefinition.packages.map((_) => _.name);
 
   return `
