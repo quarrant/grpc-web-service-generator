@@ -1,30 +1,37 @@
 #!/usr/bin/env node
 import * as path from 'path';
-import * as fs from 'fs';
+import { promises as fs} from 'fs';
 
-import * as cliArgs from './cli-args';
 import * as protobuf from './protobuf';
 import * as jsgen from './jsgen';
 
-const options: cliArgs.ArgsOptions = {
-  protoFile: {
-    key: '--proto-file',
-    type: 'string',
-  },
-  outputDir: {
-    key: '--output-dir',
-    type: 'string',
-  },
-  skipGrpcService: {
-    key: '--skip-grpc-service',
-    type: true,
-  },
-};
+import yargs from 'yargs/yargs';
 
 async function cli() {
   try {
-    const params = cliArgs.getArgs(process.argv, options);
-    const rootProtoShortname = path.parse(params.protoFile).name;
+    const argv = await yargs(process.argv.slice(2))
+    .options({
+      'proto-file': {
+        type: 'string',
+        demandOption: true,
+        describe: 'Protobuf definition file',
+      },
+      'output-dir': {
+        type: 'string',
+        demandOption: true,
+        describe: 'Ouput director for generated code'
+      },
+      'skip-grpc-service': {
+        type: 'boolean',
+        default: false,
+        describe: 'Disable generation of GrpcService (special for server-side)'
+      },
+    })
+    .version()
+    .help().alias('h', 'help')
+    .argv;
+
+    const rootProtoShortname = path.parse(argv['proto-file']).name;
     const codegenToken = 'codegen';
 
     /**
@@ -32,7 +39,7 @@ async function cli() {
      * списка всех используемых proto-файлов, а также для последующей
      * генерации клиентского GrpcService.
      */
-    const packageDefinition = await protobuf.loadPackageDefinition(params.protoFile);
+    const packageDefinition = await protobuf.loadPackageDefinition(argv['proto-file']);
 
     /**
      * Каталог для сгенерированных protobufjs файлов вида app_pb.js и app_pb.d.ts
@@ -40,10 +47,8 @@ async function cli() {
      * с серверным .proto файлов, так и клиентский каталог для последущей генерации
      * GrpcService.
      */
-    const codegenDirectory = path.resolve(params.outputDir, codegenToken);
-    if (!fs.existsSync(codegenDirectory)) {
-      fs.mkdirSync(codegenDirectory, { recursive: true });
-    }
+    const codegenDirectory = path.resolve(argv['output-dir'], codegenToken);
+    await fs.mkdir(codegenDirectory, { recursive: true });
 
     /**
      * Генерация пакетов, сервисов и их объектов с proto-файла,
@@ -52,7 +57,7 @@ async function cli() {
      */
     const staticObjectsSource = await protobuf.generateStaticObjects(packageDefinition.files);
     const staticObjectsFilename = path.resolve(codegenDirectory, `${rootProtoShortname}_pb.js`);
-    fs.writeFileSync(staticObjectsFilename, staticObjectsSource);
+    await fs.writeFile(staticObjectsFilename, staticObjectsSource);
 
     /**
      * Генерация описания типов для уже сгенерированных пакетов,
@@ -60,7 +65,7 @@ async function cli() {
      */
     const staticDeclarationsSource = await protobuf.generateStaticDeclarations(staticObjectsFilename);
     const staticDeclarationsFilename = path.resolve(codegenDirectory, `${rootProtoShortname}_pb.d.ts`);
-    fs.writeFileSync(staticDeclarationsFilename, staticDeclarationsSource);
+    await fs.writeFile(staticDeclarationsFilename, staticDeclarationsSource);
 
     /**
      * Генерация клиентсткого GrpcService. Является оберткой
@@ -68,12 +73,12 @@ async function cli() {
      * работы с grpc, так как содержит созданные классы всех сервисов
      * на основе промисов.
      */
-    if (!params.skipGrpcService) {
+    if (!argv['skip-grpc-service']) {
       const staticObjectsRelativeFilename = './' + codegenToken + `/${rootProtoShortname}_pb`;
       const grpcServiceSource = jsgen.createGrpcServiceSource(packageDefinition, staticObjectsRelativeFilename);
 
-      const grpcServiceFilename = path.resolve(params.outputDir, 'GrpcService.ts');
-      fs.writeFileSync(grpcServiceFilename, grpcServiceSource);
+      const grpcServiceFilename = path.resolve(argv['output-dir'], 'GrpcService.ts');
+      await fs.writeFile(grpcServiceFilename, grpcServiceSource);
     }
   } catch (error) {
     console.error('grpcw-service-generator [error]:', error);

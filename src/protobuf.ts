@@ -1,4 +1,4 @@
-import protobufjs, { ReflectionObject, IService } from 'protobufjs/minimal';
+import protobufjs, { ReflectionObject, IService, NamespaceBase } from 'protobufjs/minimal';
 import protobufjsCli from 'protobufjs/cli';
 
 import * as utils from './utils';
@@ -40,7 +40,7 @@ function mapPackageServices(packageServices: Record<string, IService>) {
     }
 
     return services;
-  }, [] as PackageService[]);
+  }, [] as PackageService[]).sort((a, b) => strcmp(a.name, b.name));
 }
 
 function mapServiceMethods(methods: IService['methods']) {
@@ -50,7 +50,7 @@ function mapServiceMethods(methods: IService['methods']) {
     responseType: methods[method].responseType,
     requestStream: methods[method].requestStream,
     responseStream: methods[method].responseStream,
-  }));
+  })).sort((a, b) => strcmp(a.name, b.name));
 }
 
 export function loadPackageDefinition(protoFile: string): Promise<PackageDefinition> {
@@ -76,6 +76,16 @@ export function loadPackageDefinition(protoFile: string): Promise<PackageDefinit
   });
 }
 
+function strcmp(a: string, b: string): number {
+  if (a < b) {
+    return -1;
+  } else if (a > b) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 export function generateStaticObjects(protoFiles: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     protobufjsCli.pbjs.main(
@@ -92,7 +102,10 @@ export function generateStaticObjects(protoFiles: string[]): Promise<string> {
         ...protoFiles,
       ],
       (error, output) => {
-        if (error) reject(error);
+        if (error || !output) {
+          reject(error || new Error('Empty output'));
+          return;
+        }
         resolve(output);
       },
     );
@@ -102,7 +115,10 @@ export function generateStaticObjects(protoFiles: string[]): Promise<string> {
 export function generateStaticDeclarations(staticObjectsFile: string): Promise<string> {
   return new Promise((resolve, reject) => {
     protobufjsCli.pbts.main([staticObjectsFile], (error, output) => {
-      if (error) reject(error);
+      if (error || !output) {
+        reject(error || new Error('Empty output'));
+        return;
+      }
       resolve(output);
     });
   });
