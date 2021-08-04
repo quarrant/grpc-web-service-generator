@@ -102,7 +102,7 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
 
   const methodDescriptorPropName = `methodDescriptor_${method.name}`;
   ret.push(
-    `${methodDescriptorPropName}: new MethodDescriptor(`,
+    `${methodDescriptorPropName}: new MethodDescriptor<${packageName}.${method.requestType}, ${packageName}.${method.responseType}>(`,
     `  '/${packageName}.${serviceName}/${method.name}',`,
     `  ${method.responseStream ? `'server_streaming'` : `'unary'`},`,
     `  ${packageName}.${method.requestType},`,

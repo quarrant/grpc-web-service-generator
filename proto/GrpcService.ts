@@ -54,7 +54,7 @@ export class GrpcService {
 
   public Test = {
     TestService: {
-      methodDescriptor_GetOrder: new MethodDescriptor(
+      methodDescriptor_GetOrder: new MethodDescriptor<Test.EmptyMessage, Test.EmptyMessage>(
         '/Test.TestService/GetOrder',
         'unary',
         Test.EmptyMessage,
@@ -65,7 +65,7 @@ export class GrpcService {
       GetOrder: (params: Test.IEmptyMessage, options: Options = {}): Promise<Test.EmptyMessage> => {
         return this.makeInterceptedUnaryCall('/Test.TestService/GetOrder', params, this.Test.TestService.methodDescriptor_GetOrder, options);
       },
-      methodDescriptor_RefreshToken: new MethodDescriptor(
+      methodDescriptor_RefreshToken: new MethodDescriptor<Test.EmptyMessage, Test.EmptyMessage>(
         '/Test.TestService/RefreshToken',
         'unary',
         Test.EmptyMessage,
@@ -80,7 +80,7 @@ export class GrpcService {
   };
   public Test2_Nested = {
     TestService2: {
-      methodDescriptor_GetOrder: new MethodDescriptor(
+      methodDescriptor_GetOrder: new MethodDescriptor<Test2_Nested.EmptyMessage, Test2_Nested.EmptyMessage>(
         '/Test2_Nested.TestService2/GetOrder',
         'unary',
         Test2_Nested.EmptyMessage,
