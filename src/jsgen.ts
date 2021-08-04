@@ -17,11 +17,15 @@ export function createGrpcServiceSource(packageDefinition: PackageDefinition, st
 
   return `
 /* eslint-disable */
-import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream, MethodDescriptor } from 'grpc-web';
+import { GrpcWebClientBase, GrpcWebClientBaseOptions, Metadata, MethodDescriptor, UnaryInterceptor } from 'grpc-web';
 import { ${packagesNamesArray.join(', ')} } from '${staticObjectsRelativeFilename}';
 
-type Options = {
+type MethodOptions = {
   ignoreInterceptors?: boolean
+}
+
+export type GrpcServiceOptions = GrpcWebClientBaseOptions & {
+  unaryInterceptors?: ArrayLike<UnaryInterceptor<any, any>>
 }
 
 export class GrpcService {
@@ -32,11 +36,11 @@ export class GrpcService {
   public interceptors: { errors: ((e: any) => Promise<any>)[] } = {
     errors: []
   };
-  constructor(hostname: string) {
-    this.client = new GrpcWebClientBase({});
+  constructor(hostname: string, opts: GrpcServiceOptions = {}) {
+    this.client = new GrpcWebClientBase(opts);
     this.hostname = hostname;
   }
-  private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: Options = {}): Promise<Result> => {
+  private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: MethodOptions = {}): Promise<Result> => {
     const unaryCallHandler = (): Promise<Result> => this.client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
     
     if (options.ignoreInterceptors) {
@@ -119,7 +123,7 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
       '},');
   } else {
     ret.push(
-      `${method.name}: (params: ${packageName}.I${method.requestType}, options: Options = {}): Promise<${packageName}.${method.responseType}> => {`,
+      `${method.name}: (params: ${packageName}.I${method.requestType}, options: MethodOptions = {}): Promise<${packageName}.${method.responseType}> => {`,
       `  return this.makeInterceptedUnaryCall('/${packageName}.${serviceName}/${method.name}', params, this.${packageName}.${serviceName}.${methodDescriptorPropName}, options);`,
       '},');
   }
