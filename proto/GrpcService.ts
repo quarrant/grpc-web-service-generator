@@ -1,6 +1,6 @@
 
 /* eslint-disable */
-import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream } from 'grpc-web';
+import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream, MethodDescriptor } from 'grpc-web';
 import { Test, Test2_Nested } from './codegen/test_pb';
 
 type Options = {
@@ -19,8 +19,8 @@ export class GrpcService {
     this.client = new GrpcWebClientBase({});
     this.hostname = hostname;
   }
-  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo, options: Options = {}): Promise<Result> => {
-    const unaryCallHandler = (): Promise<Result> => this.client.unaryCall(command, params, this.metadata, methodInfo)
+  private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: Options = {}): Promise<Result> => {
+    const unaryCallHandler = (): Promise<Result> => this.client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
     
     if (options.ignoreInterceptors) {
       return unaryCallHandler()
@@ -36,7 +36,7 @@ export class GrpcService {
     return new Promise((resolve, reject) => {
       unaryCallHandler().then(resolve).catch(e => {
         this.chainingInterceptors(this.interceptors.errors, e).then(() => {
-          this.makeInterceptedUnaryCall<Result, Params, MethodInfo>(command, params, methodInfo).then(resolve).catch(reject)
+          this.makeInterceptedUnaryCall<Result, Params>(command, params, methodDescriptor).then(resolve).catch(reject)
         }).catch(reject)
       });
     });
@@ -54,33 +54,42 @@ export class GrpcService {
 
   public Test = {
     TestService: {
+      methodDescriptor_GetOrder: new MethodDescriptor(
+        '/Test.TestService/GetOrder',
+        'unary',
+        Test.EmptyMessage,
+        Test.EmptyMessage,
+        (req: Test.EmptyMessage) => Test.EmptyMessage.encode(req).finish(),
+        Test.EmptyMessage.decode,
+      ),
       GetOrder: (params: Test.IEmptyMessage, options: Options = {}): Promise<Test.EmptyMessage> => {
-        const methodInfo = new AbstractClientBase.MethodInfo(
-          Test.EmptyMessage,
-          (request: Test.EmptyMessage) => Test.EmptyMessage.encode(request).finish(),
-          Test.EmptyMessage.decode
-        );
-        return this.makeInterceptedUnaryCall(this.hostname + '/Test.TestService/GetOrder', params, methodInfo, options);
+        return this.makeInterceptedUnaryCall('/Test.TestService/GetOrder', params, this.Test.TestService.methodDescriptor_GetOrder, options);
       },
+      methodDescriptor_RefreshToken: new MethodDescriptor(
+        '/Test.TestService/RefreshToken',
+        'unary',
+        Test.EmptyMessage,
+        Test.EmptyMessage,
+        (req: Test.EmptyMessage) => Test.EmptyMessage.encode(req).finish(),
+        Test.EmptyMessage.decode,
+      ),
       RefreshToken: (params: Test.IEmptyMessage, options: Options = {}): Promise<Test.EmptyMessage> => {
-        const methodInfo = new AbstractClientBase.MethodInfo(
-          Test.EmptyMessage,
-          (request: Test.EmptyMessage) => Test.EmptyMessage.encode(request).finish(),
-          Test.EmptyMessage.decode
-        );
-        return this.makeInterceptedUnaryCall(this.hostname + '/Test.TestService/RefreshToken', params, methodInfo, options);
+        return this.makeInterceptedUnaryCall('/Test.TestService/RefreshToken', params, this.Test.TestService.methodDescriptor_RefreshToken, options);
       },
     },
   };
   public Test2_Nested = {
     TestService2: {
+      methodDescriptor_GetOrder: new MethodDescriptor(
+        '/Test2_Nested.TestService2/GetOrder',
+        'unary',
+        Test2_Nested.EmptyMessage,
+        Test2_Nested.EmptyMessage,
+        (req: Test2_Nested.EmptyMessage) => Test2_Nested.EmptyMessage.encode(req).finish(),
+        Test2_Nested.EmptyMessage.decode,
+      ),
       GetOrder: (params: Test2_Nested.IEmptyMessage, options: Options = {}): Promise<Test2_Nested.EmptyMessage> => {
-        const methodInfo = new AbstractClientBase.MethodInfo(
-          Test2_Nested.EmptyMessage,
-          (request: Test2_Nested.EmptyMessage) => Test2_Nested.EmptyMessage.encode(request).finish(),
-          Test2_Nested.EmptyMessage.decode
-        );
-        return this.makeInterceptedUnaryCall(this.hostname + '/Test2_Nested.TestService2/GetOrder', params, methodInfo, options);
+        return this.makeInterceptedUnaryCall('/Test2_Nested.TestService2/GetOrder', params, this.Test2_Nested.TestService2.methodDescriptor_GetOrder, options);
       },
     },
   };

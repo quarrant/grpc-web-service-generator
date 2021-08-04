@@ -17,7 +17,7 @@ export function createGrpcServiceSource(packageDefinition: PackageDefinition, st
 
   return `
 /* eslint-disable */
-import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream } from 'grpc-web';
+import { AbstractClientBase, GrpcWebClientBase, Metadata, Error, ClientReadableStream, MethodDescriptor } from 'grpc-web';
 import { ${packagesNamesArray.join(', ')} } from '${staticObjectsRelativeFilename}';
 
 type Options = {
@@ -36,8 +36,8 @@ export class GrpcService {
     this.client = new GrpcWebClientBase({});
     this.hostname = hostname;
   }
-  private makeInterceptedUnaryCall = <Result, Params, MethodInfo>(command: string, params: Params, methodInfo: MethodInfo, options: Options = {}): Promise<Result> => {
-    const unaryCallHandler = (): Promise<Result> => this.client.unaryCall(command, params, this.metadata, methodInfo)
+  private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: Options = {}): Promise<Result> => {
+    const unaryCallHandler = (): Promise<Result> => this.client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
     
     if (options.ignoreInterceptors) {
       return unaryCallHandler()
@@ -53,7 +53,7 @@ export class GrpcService {
     return new Promise((resolve, reject) => {
       unaryCallHandler().then(resolve).catch(e => {
         this.chainingInterceptors(this.interceptors.errors, e).then(() => {
-          this.makeInterceptedUnaryCall<Result, Params, MethodInfo>(command, params, methodInfo).then(resolve).catch(reject)
+          this.makeInterceptedUnaryCall<Result, Params>(command, params, methodDescriptor).then(resolve).catch(reject)
         }).catch(reject)
       });
     });
@@ -98,27 +98,30 @@ function createServerStreamingFunction(packageName: string, serviceName: string,
 }
 
 export function createServiceMethodSource(method: ServiceMethod, serviceName: string, packageName: string) {
-  if (method.responseStream) {
-    return [
-      `${method.name}: (params: ${packageName}.I${method.requestType}): ClientReadableStream<${packageName}.${method.responseType}> => {`,
-      '  const methodInfo = new AbstractClientBase.MethodInfo(',
-      `    ${packageName}.${method.responseType},`,
-      `    (request: ${packageName}.${method.requestType}) => ${packageName}.${method.requestType}.encode(request).finish(),`,
-      `    ${packageName}.${method.responseType}.decode`,
-      '  );',
-      `  ${createServerStreamingFunction(packageName, serviceName, method.name)}`,
-      '},',
-    ].join(`\n${getIndentSpaces(3)}`);
-  }
+  const ret: string[] = [];
 
-  return [
-    `${method.name}: (params: ${packageName}.I${method.requestType}, options: Options = {}): Promise<${packageName}.${method.responseType}> => {`,
-    '  const methodInfo = new AbstractClientBase.MethodInfo(',
-    `    ${packageName}.${method.responseType},`,
-    `    (request: ${packageName}.${method.requestType}) => ${packageName}.${method.requestType}.encode(request).finish(),`,
-    `    ${packageName}.${method.responseType}.decode`,
-    '  );',
-    `  return this.makeInterceptedUnaryCall(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, methodInfo, options);`,
-    '},',
-  ].join(`\n${getIndentSpaces(3)}`);
+  const methodDescriptorPropName = `methodDescriptor_${method.name}`;
+  ret.push(
+    `${methodDescriptorPropName}: new MethodDescriptor(`,
+    `  '/${packageName}.${serviceName}/${method.name}',`,
+    `  ${method.responseStream ? `'server_streaming'` : `'unary'`},`,
+    `  ${packageName}.${method.requestType},`,
+    `  ${packageName}.${method.responseType},`,
+    `  (req: ${packageName}.${method.requestType}) => ${packageName}.${method.requestType}.encode(req).finish(),`,
+    `  ${packageName}.${method.responseType}.decode,`,
+    `),`
+  );
+
+  if (method.responseStream) {
+    ret.push(
+      `${method.name}: (params: ${packageName}.I${method.requestType}): ClientReadableStream<${packageName}.${method.responseType}> => {`,
+      `  return this.client.serverStreaming(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, this.metadata, this.${packageName}.${serviceName}.${methodDescriptorPropName})`,
+      '},');
+  } else {
+    ret.push(
+      `${method.name}: (params: ${packageName}.I${method.requestType}, options: Options = {}): Promise<${packageName}.${method.responseType}> => {`,
+      `  return this.makeInterceptedUnaryCall('/${packageName}.${serviceName}/${method.name}', params, this.${packageName}.${serviceName}.${methodDescriptorPropName}, options);`,
+      '},');
+  }
+  return ret.join(`\n${getIndentSpaces(3)}`);
 }
