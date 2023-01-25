@@ -10,3 +10,7 @@ service TestService {
 }
 
 message EmptyMessage {}
+
+message TestCase {
+  string a_b = 1;
+}

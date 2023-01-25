@@ -99,6 +99,7 @@ export function generateStaticObjects(protoFiles: string[]): Promise<string> {
         '--no-verify',
         '--no-convert',
         '--no-delimited',
+        '--keep-case',
         ...protoFiles,
       ],
       (error, output) => {

@@ -172,6 +172,87 @@ $root.Test = (function() {
         return EmptyMessage;
     })();
 
+    Test.TestCase = (function() {
+
+        /**
+         * Properties of a TestCase.
+         * @memberof Test
+         * @interface ITestCase
+         * @property {string|null} [a_b] TestCase a_b
+         */
+
+        /**
+         * Constructs a new TestCase.
+         * @memberof Test
+         * @classdesc Represents a TestCase.
+         * @implements ITestCase
+         * @constructor
+         * @param {Test.ITestCase=} [properties] Properties to set
+         */
+        function TestCase(properties) {
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TestCase a_b.
+         * @member {string} a_b
+         * @memberof Test.TestCase
+         * @instance
+         */
+        TestCase.prototype.a_b = "";
+
+        /**
+         * Encodes the specified TestCase message. Does not implicitly {@link Test.TestCase.verify|verify} messages.
+         * @function encode
+         * @memberof Test.TestCase
+         * @static
+         * @param {Test.ITestCase} message TestCase message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TestCase.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.a_b != null && Object.hasOwnProperty.call(message, "a_b"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.a_b);
+            return writer;
+        };
+
+        /**
+         * Decodes a TestCase message from the specified reader or buffer.
+         * @function decode
+         * @memberof Test.TestCase
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {Test.TestCase} TestCase
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TestCase.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.Test.TestCase();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.a_b = reader.string();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        return TestCase;
+    })();
+
     return Test;
 })();
 

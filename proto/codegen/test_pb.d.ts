@@ -90,6 +90,44 @@ export namespace Test {
          */
         public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Test.EmptyMessage;
     }
+
+    /** Properties of a TestCase. */
+    interface ITestCase {
+
+        /** TestCase a_b */
+        a_b?: (string|null);
+    }
+
+    /** Represents a TestCase. */
+    class TestCase implements ITestCase {
+
+        /**
+         * Constructs a new TestCase.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: Test.ITestCase);
+
+        /** TestCase a_b. */
+        public a_b: string;
+
+        /**
+         * Encodes the specified TestCase message. Does not implicitly {@link Test.TestCase.verify|verify} messages.
+         * @param message TestCase message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: Test.ITestCase, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TestCase message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TestCase
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Test.TestCase;
+    }
 }
 
 /** Namespace Test2_Nested. */
