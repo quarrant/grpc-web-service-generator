@@ -55,6 +55,9 @@ export class GrpcService {
   public setMetadata = (metadata: Metadata = {}) => {
     this.metadata = Object.assign({}, this.metadata, metadata);
   };
+  public getMetadata = () => {
+    return this.metadata;
+  };
 
   public Test = {
     TestService: {
