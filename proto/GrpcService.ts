@@ -8,20 +8,23 @@ type MethodOptions = {
 }
 
 export type GrpcServiceOptions = GrpcWebClientBaseOptions & {
-  unaryInterceptors?: ArrayLike<UnaryInterceptor<any, any>>
+  unaryInterceptors?: ArrayLike<UnaryInterceptor<any, any>>,
+  fakeMethods?: boolean
 }
 
 export class GrpcService {
   private client: GrpcWebClientBase;
   private metadata: Metadata = {};
   private hostname: string;
+  private options: GrpcServiceOptions;
   private interceptingPromise?: Promise<any>;
   public interceptors: { errors: ((e: any) => Promise<any>)[] } = {
     errors: []
   };
-  constructor(hostname: string, opts: GrpcServiceOptions = {}) {
-    this.client = new GrpcWebClientBase(opts);
+  constructor(hostname: string, options: GrpcServiceOptions = {}) {
+    this.options = options;
     this.hostname = hostname;
+    this.client = new GrpcWebClientBase(this.options);
   }
   private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: MethodOptions = {}): Promise<Result> => {
     const unaryCallHandler = (): Promise<Result> => this.client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
@@ -70,6 +73,7 @@ export class GrpcService {
         Test.EmptyMessage.decode,
       ),
       GetOrder: (params: Test.IEmptyMessage, options: MethodOptions = {}): Promise<Test.EmptyMessage> => {
+        if (!!this.options.fakeMethods) return Promise.resolve(new Test.EmptyMessage());
         return this.makeInterceptedUnaryCall('/Test.TestService/GetOrder', params, this.Test.TestService.methodDescriptor_GetOrder, options);
       },
       methodDescriptor_RefreshToken: new MethodDescriptor<Test.EmptyMessage, Test.EmptyMessage>(
@@ -81,6 +85,7 @@ export class GrpcService {
         Test.EmptyMessage.decode,
       ),
       RefreshToken: (params: Test.IEmptyMessage, options: MethodOptions = {}): Promise<Test.EmptyMessage> => {
+        if (!!this.options.fakeMethods) return Promise.resolve(new Test.EmptyMessage());
         return this.makeInterceptedUnaryCall('/Test.TestService/RefreshToken', params, this.Test.TestService.methodDescriptor_RefreshToken, options);
       },
     },
@@ -96,6 +101,7 @@ export class GrpcService {
         Test2_Nested.EmptyMessage.decode,
       ),
       GetOrder: (params: Test2_Nested.IEmptyMessage, options: MethodOptions = {}): Promise<Test2_Nested.EmptyMessage> => {
+        if (!!this.options.fakeMethods) return Promise.resolve(new Test2_Nested.EmptyMessage());
         return this.makeInterceptedUnaryCall('/Test2_Nested.TestService2/GetOrder', params, this.Test2_Nested.TestService2.methodDescriptor_GetOrder, options);
       },
     },

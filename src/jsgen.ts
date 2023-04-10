@@ -25,20 +25,23 @@ type MethodOptions = {
 }
 
 export type GrpcServiceOptions = GrpcWebClientBaseOptions & {
-  unaryInterceptors?: ArrayLike<UnaryInterceptor<any, any>>
+  unaryInterceptors?: ArrayLike<UnaryInterceptor<any, any>>,
+  fakeMethods?: boolean
 }
 
 export class GrpcService {
   private client: GrpcWebClientBase;
   private metadata: Metadata = {};
   private hostname: string;
+  private options: GrpcServiceOptions;
   private interceptingPromise?: Promise<any>;
   public interceptors: { errors: ((e: any) => Promise<any>)[] } = {
     errors: []
   };
-  constructor(hostname: string, opts: GrpcServiceOptions = {}) {
-    this.client = new GrpcWebClientBase(opts);
+  constructor(hostname: string, options: GrpcServiceOptions = {}) {
+    this.options = options;
     this.hostname = hostname;
+    this.client = new GrpcWebClientBase(this.options);
   }
   private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: MethodOptions = {}): Promise<Result> => {
     const unaryCallHandler = (): Promise<Result> => this.client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
@@ -127,6 +130,7 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
   } else {
     ret.push(
       `${method.name}: (params: ${packageName}.I${method.requestType}, options: MethodOptions = {}): Promise<${packageName}.${method.responseType}> => {`,
+      `  if (!!this.options.fakeMethods) return Promise.resolve(new ${packageName}.${method.responseType}());`,
       `  return this.makeInterceptedUnaryCall('/${packageName}.${serviceName}/${method.name}', params, this.${packageName}.${serviceName}.${methodDescriptorPropName}, options);`,
       '},');
   }
