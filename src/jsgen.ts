@@ -30,7 +30,7 @@ export type GrpcServiceOptions = GrpcWebClientBaseOptions & {
 }
 
 export class GrpcService {
-  private client: GrpcWebClientBase;
+  _client: GrpcWebClientBase;
   private metadata: Metadata = {};
   private hostname: string;
   private options: GrpcServiceOptions;
@@ -41,10 +41,10 @@ export class GrpcService {
   constructor(hostname: string, options: GrpcServiceOptions = {}) {
     this.options = options;
     this.hostname = hostname;
-    this.client = new GrpcWebClientBase(this.options);
+    this._client = new GrpcWebClientBase(this.options);
   }
   private makeInterceptedUnaryCall = <Result, Params>(command: string, params: Params, methodDescriptor: MethodDescriptor<Params, Result>, options: MethodOptions = {}): Promise<Result> => {
-    const unaryCallHandler = (): Promise<Result> => this.client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
+    const unaryCallHandler = (): Promise<Result> => this._client.thenableCall(this.hostname + command, params, this.metadata, methodDescriptor)
     
     if (options.ignoreInterceptors) {
       return unaryCallHandler()
@@ -61,7 +61,7 @@ export class GrpcService {
       unaryCallHandler().then(resolve).catch(e => {
         this.chainingInterceptors(this.interceptors.errors, e).then(() => {
           this.makeInterceptedUnaryCall<Result, Params>(command, params, methodDescriptor).then(resolve).catch(reject)
-        }).catch(reject)
+        }).catch(reject).finally(() => (this.interceptingPromise = undefined));
       });
     });
   }
@@ -104,7 +104,7 @@ export function createServiceSource(service: PackageService, packageName: string
 }
 
 function createServerStreamingFunction(packageName: string, serviceName: string, methodName: string) {
-  return `return this.client.serverStreaming(this.hostname + '/${packageName}.${serviceName}/${methodName}', params, this.metadata, methodInfo)`;
+  return `return this._client.serverStreaming(this.hostname + '/${packageName}.${serviceName}/${methodName}', params, this.metadata, methodInfo)`;
 }
 
 export function createServiceMethodSource(method: ServiceMethod, serviceName: string, packageName: string) {
@@ -125,7 +125,7 @@ export function createServiceMethodSource(method: ServiceMethod, serviceName: st
   if (method.responseStream) {
     ret.push(
       `${method.name}: (params: ${packageName}.I${method.requestType}): ClientReadableStream<${packageName}.${method.responseType}> => {`,
-      `  return this.client.serverStreaming(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, this.metadata, this.${packageName}.${serviceName}.${methodDescriptorPropName})`,
+      `  return this._client.serverStreaming(this.hostname + '/${packageName}.${serviceName}/${method.name}', params, this.metadata, this.${packageName}.${serviceName}.${methodDescriptorPropName})`,
       '},');
   } else {
     ret.push(
