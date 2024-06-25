@@ -44,7 +44,7 @@ export class GrpcService {
       unaryCallHandler().then(resolve).catch(e => {
         this.chainingInterceptors(this.interceptors.errors, e).then(() => {
           this.makeInterceptedUnaryCall<Result, Params>(command, params, methodDescriptor).then(resolve).catch(reject)
-        }).catch(reject)
+        }).catch(reject).finally(() => (this.interceptingPromise = undefined));
       });
     });
   }
